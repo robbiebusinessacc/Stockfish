@@ -126,6 +126,7 @@ struct Stack {
     bool                        inCheck;
     bool                        ttPv;
     bool                        ttHit;
+    bool                        hasTTMove;
     bool                        followPV;
     int                         cutoffCnt;
     int                         reduction;

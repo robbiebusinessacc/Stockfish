@@ -842,11 +842,12 @@ Value Search::Worker::search(
     posKey                         = pos.key();
     auto [ttHit, ttData, ttWriter] = tt.probe(posKey);
 
-    ss->ttHit    = ttHit;
-    ttData.move  = rootNode ? rootMoves[pvIdx].pv[0] : ttHit ? ttData.move : Move::none();
-    ttData.value = ttHit ? value_from_tt(ttData.value, ss->ply, pos.rule50_count()) : VALUE_NONE;
-    ss->ttPv     = excludedMove ? ss->ttPv : PvNode || (ttHit && ttData.is_pv);
-    ttCapture    = ttData.move && pos.capture_stage(ttData.move);
+    ss->ttHit     = ttHit;
+    ttData.move   = rootNode ? rootMoves[pvIdx].pv[0] : ttHit ? ttData.move : Move::none();
+    ttData.value  = ttHit ? value_from_tt(ttData.value, ss->ply, pos.rule50_count()) : VALUE_NONE;
+    ss->ttPv      = excludedMove ? ss->ttPv : PvNode || (ttHit && ttData.is_pv);
+    ss->hasTTMove = bool(ttData.move);
+    ttCapture     = ttData.move && pos.capture_stage(ttData.move);
 
     // Step 5. Static evaluation of the position
     Value unadjustedStaticEval = VALUE_NONE;
@@ -2043,7 +2044,8 @@ void update_all_stats(const Position& pos,
 
     // Extra penalty for a quiet early move that was not a TT move in
     // previous ply when it gets refuted.
-    if (prevSq != SQ_NONE && ((ss - 1)->moveCount == 1 + (ss - 1)->ttHit) && !pos.captured_piece())
+    if (prevSq != SQ_NONE && ((ss - 1)->moveCount == 1 + (ss - 1)->hasTTMove)
+        && !pos.captured_piece())
         update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq, -malus * 713 / 1024);
 
     // Decrease stats for all non-best capture moves
